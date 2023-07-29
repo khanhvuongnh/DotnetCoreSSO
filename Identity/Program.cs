@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +10,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddAuthentication();
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
+builder.Services
+    .AddDataProtection()
+    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect("127.0.0.1:6379"))
+    .SetApplicationName("unique");
+builder.Services.AddAuthorization();
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o => o.Cookie.Domain = ".company.local");
 
 var app = builder.Build();
 
@@ -26,8 +34,8 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.MapGet("/", () => "hello world");
-app.MapGet("/Protected", () => "secret").RequireAuthorization();
-app.MapGet("/Login", (HttpContext ctx) =>
+app.MapGet("/protected", () => "secret").RequireAuthorization();
+app.MapGet("/login", (HttpContext ctx) =>
 {
     ctx.SignInAsync(new ClaimsPrincipal(new[]
     {
