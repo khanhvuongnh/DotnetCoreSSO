@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
 using StackExchange.Redis;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,7 +11,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services
     .AddDataProtection()
-    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect("127.0.0.1:6379"))
+    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect("203.113.151.196:6379"))
     .SetApplicationName("unique");
 builder.Services.AddAuthorization();
 builder.Services
@@ -26,12 +27,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGet("/", () => "hello world");
-app.MapGet("/protected", () => "secret").RequireAuthorization();
+app.MapGet("/", (HttpContext ctx) =>
+{
+    var ct = ctx;
+    return ct.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+});
+app.MapGet("/protected", (HttpContext ctx) => {
+    var ct = ctx;
+    return ct.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.Name)?.Value;
+}).RequireAuthorization();
 
 app.Run();

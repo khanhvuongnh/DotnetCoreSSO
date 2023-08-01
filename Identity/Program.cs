@@ -12,7 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services
     .AddDataProtection()
-    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect("127.0.0.1:6379"))
+    .PersistKeysToStackExchangeRedis(ConnectionMultiplexer.Connect("203.113.151.196:6379"))
     .SetApplicationName("unique");
 builder.Services.AddAuthorization();
 builder.Services
@@ -28,13 +28,26 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.MapGet("/", () => "hello world");
+app.MapGet("/", () => "You are on Identity server");
 app.MapGet("/protected", () => "secret").RequireAuthorization();
+app.MapGet("/loginI{id}", (string id, HttpContext ctx) =>
+{
+    ctx.SignInAsync(new ClaimsPrincipal(new[]
+    {
+        new ClaimsIdentity(new List<Claim>()
+        {
+            new Claim(ClaimTypes.Name, id)
+        },
+        CookieAuthenticationDefaults.AuthenticationScheme)
+    }));
+
+    return id;
+});
 app.MapGet("/login", (HttpContext ctx) =>
 {
     ctx.SignInAsync(new ClaimsPrincipal(new[]
