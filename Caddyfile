@@ -1,7 +1,7 @@
 identity.company.local {
-  reverse_proxy 203.113.151.196:8081
+  reverse_proxy localhost:5099
 }
 
 app.company.local {
-  reverse_proxy localhost:5265
+  reverse_proxy 127.0.0.1:5265
 }
